@@ -54,13 +54,13 @@ class Navigation:
     def BaseCB(self,pose):
         try:
             if pose.transforms[0].header.frame_id == 'odom':
-                print 'rotation z is: ',pose.transforms[0].transform.rotation.z#'rotation w is: ',pose.transforms[0].transform.rotation.w
+                print 'rotation z is: ',pose.transforms[0].transform.rotation.z
                 self.robot_pose_x = pose.transforms[0].transform.translation.x
                 self.robot_pose_y = pose.transforms[0].transform.translation.y
                 self.robot_pose_w = pose.transforms[0].transform.rotation.z
                 if self.cancel_flg == 1 and self.location_append_num > 0:
                     if self.sub_state == 0:
-                        rospy.sleep(0.5)#test
+                        rospy.sleep(0.5)
                         self.location_append_num = self.location_append_num -1
                         print 'state is: 0'
                         rospy.sleep(0.5)
@@ -190,20 +190,17 @@ class Navigation:
         goal.target_pose.header.frame_id = 'map'          # 地図座標系
         goal.target_pose.header.stamp = rospy.Time.now() # 現在時刻
         goal.target_pose.pose.position.x =  self.location_list[location_num][1]
-        goal.target_pose.pose.position.y =  self.location_list[location_num][2]
-        #goal.target_pose.pose.orientation = self.location_list[location_num][3]
+        goal.target_pose.pose.position.y =  self.location_list[location_num][2]        
         q = tf.transformations.quaternion_from_euler(0, 0, self.location_list[location_num][3])
         goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
         ac.send_goal(goal);
         
         while not rospy.is_shutdown():
             print 'get state is',ac.get_state()
-            if ac.get_state == 1 and reset_flg == 1:
-                #↓
+            if ac.get_state == 1 and reset_flg == 1:                
                 print 'Got out of the obstacle'
                 self.reset_pub.publish(0)
                 reset_flg = 0
-                #↑
             if ac.get_state() == 3:
                 print "goal"
                 result = String()
@@ -214,12 +211,10 @@ class Navigation:
                     exit()
                 break
             if ac.get_state() == 4 and reset_flg == 0:
-                #↓
                 print 'Buried in obstacles'
                 self.clear_costmap()
                 self.reset_pub.publish(1)
                 reset_flg = 1
-                #↑
                 ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
                 if ac.wait_for_server(rospy.Duration(5)) == 1:
                     print "wait for action client rising up 1"
@@ -227,8 +222,7 @@ class Navigation:
                 goal.target_pose.header.frame_id = 'map'          # 地図座標系
                 goal.target_pose.header.stamp = rospy.Time.now() # 現在時刻
                 goal.target_pose.pose.position.x =  self.location_list[location_num][1]
-                goal.target_pose.pose.position.y =  self.location_list[location_num][2]
-                #goal.target_pose.pose.orientation = self.location_list[location_num][3]
+                goal.target_pose.pose.position.y =  self.location_list[location_num][2]                
                 q = tf.transformations.quaternion_from_euler(0, 0, self.location_list[location_num][3])
                 goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
                 ac.send_goal(goal);
