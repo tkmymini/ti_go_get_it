@@ -29,10 +29,14 @@ class Navigation:
         self.cmd_vel = Twist()
         self.cmd_vel.angular.z = 0.0
         self.sub_state = 0
+        self.pose_x = 0
+        self.pose_y = 0
 
     def Navigate(self,destination):
         self.pose_x = destination.pose_x
         self.pose_y = destination.pose_y
+        print 'destination x:',self.pose_x
+        print 'destination y:',self.pose_y
         ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         if ac.wait_for_server(rospy.Duration(5)) == 1:
             print "wait for action client rising up 0"
