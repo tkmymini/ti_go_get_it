@@ -24,21 +24,28 @@ class GoGetItNode:
         self.trainingAPI_pub = rospy.Publisher('/trainingface',Bool,queue_size=10)
         self.commandAPI_pub = rospy.Publisher('/commandface',Bool,queue_size=10)
         self.changing_pose_req_pub = rospy.Publisher('/arm/changing_pose_req',String,queue_size=1)
-        
+
+        #状態遷移するための変数
         self.main_state = 999
         self.sub_state = 0
+        #state名(定数)
         self.setup = 'setup'
         self.command = 'command'
         self.finish = 'finish'
-        self.succsess_count = 0
+        #命令の受け取り
         self.receive_com = False
+        #各stateの確認
         self.follow_state = 'null'
         self.training_state = 'null'
+        #各result
         self.setup_result = False
         self.navigation_result = 'Null'
-        self.manipulation_result = 'Null'
+        self.manipulation_result = False
         self.arm_change_result = 'Null'
+        #把持する物体名
         self.mani_obj = 'null'
+        #成功した命令回数
+        self.succsess_count = 0
 
         self.order_list = ['setup','command']
         
@@ -68,19 +75,16 @@ class GoGetItNode:
                     CMD = '/usr/bin/picospeaker %s' % 'Ok'
                     subprocess.call(CMD.strip().split(" "))
                     rospy.sleep(0.5)
-                    print 'after ok:',self.follow_state
-                    self.follow_request_pub.publish('stop')#followの終了#followの終了にラグがありすぎる場合はこの場所をsentecereceiveに書こうかな
+                    self.follow_request_pub.publish('stop')#followの終了#followの終了にラグがありすぎる場合はこの場所をsentecereceiveに書く
                     self.followAPI_pub.publish(False)
                     print 'stop'
                     self.follow_state = 'null'
-                    print 'after follow_state = null',self.follow_state
                     self.sub_state=2
             elif self.sub_state == 2:
                 self.trainingAPI_pub.publish(True)
                 CMD = '/usr/bin/picospeaker %s' % 'Memorize start'
                 subprocess.call(CMD.strip().split(" "))
                 rospy.sleep(1)
-                print 'sub_state=2:',self.follow_state 
                 self.sub_state=3
             elif self.sub_state == 3:
                 print 'trainingface'
@@ -91,7 +95,6 @@ class GoGetItNode:
                     rospy.sleep(0.5)
                     self.training_state = 'null'
                     self.sub_state=0
-                    print 'sub_state=3:',self.follow_state
                     rospy.sleep(3)
         elif self.setup_result == True:
             self.trainingAPI_pub.publish(False)
@@ -99,7 +102,7 @@ class GoGetItNode:
             self.sub_state = 0
        
     def Command(self):
-        if self.succsess_count < 5:#self.succsess_count < 繰り返したい回数#test
+        if self.succsess_count < 5:#self.succsess_count < 繰り返したい回数
             print 'commandface'            
             if self.sub_state == 0:
                 self.commandAPI_pub.publish(True)
@@ -168,7 +171,6 @@ class GoGetItNode:
 
     def follow(self,state):
         self.follow_state = state.data
-        print 'def follow',self.follow_state
 
     def training(self,state):
         self.training_state = state.data 
