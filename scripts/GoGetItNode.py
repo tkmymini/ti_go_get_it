@@ -48,6 +48,9 @@ class GoGetItNode:
             #self.m6_reqest_pub.publish(0.0)
             if self.sub_state == 0:
                 self.followAPI_pub.publish(True)
+                CMD = '/usr/bin/picospeaker %s' % 'Waiting'
+                subprocess.call(CMD.strip().split(" "))
+                rospy.sleep(0.5)
                 self.sub_state=1
             elif self.sub_state == 1:
                 print 'followface'
@@ -62,20 +65,34 @@ class GoGetItNode:
                 elif self.follow_state == 'now':
                     print 'now'
                 elif self.follow_state == 'stop':
+                    CMD = '/usr/bin/picospeaker %s' % 'Ok'
+                    subprocess.call(CMD.strip().split(" "))
+                    rospy.sleep(0.5)
+                    print 'after ok:',self.follow_state
                     self.follow_request_pub.publish('stop')#followの終了#followの終了にラグがありすぎる場合はこの場所をsentecereceiveに書こうかな
                     self.followAPI_pub.publish(False)
                     print 'stop'
                     self.follow_state = 'null'
+                    print 'after follow_state = null',self.follow_state
                     self.sub_state=2
             elif self.sub_state == 2:
                 self.trainingAPI_pub.publish(True)
+                CMD = '/usr/bin/picospeaker %s' % 'Memorize start'
+                subprocess.call(CMD.strip().split(" "))
+                rospy.sleep(1)
+                print 'sub_state=2:',self.follow_state 
                 self.sub_state=3
             elif self.sub_state == 3:
                 print 'trainingface'
                 if self.training_state == 'finish':
                     self.trainingAPI_pub.publish(False)
+                    CMD = '/usr/bin/picospeaker %s' % 'Memorize fenish'
+                    subprocess.call(CMD.strip().split(" "))
+                    rospy.sleep(0.5)
                     self.training_state = 'null'
                     self.sub_state=0
+                    print 'sub_state=3:',self.follow_state
+                    rospy.sleep(3)
         elif self.setup_result == True:
             self.trainingAPI_pub.publish(False)
             self.main_state = self.order_list[1]
@@ -133,7 +150,7 @@ class GoGetItNode:
                 rospy.sleep(2)#時間の調整あり
                 self.sub_state = 8
             elif self.sub_state == 8:
-                CMD = '/usr/bin/picospeaker %s' % 'you are welcome'
+                CMD = '/usr/bin/picospeaker %s' % 'You are welcome'
                 subprocess.call(CMD.strip().split(" "))
                 rospy.sleep(1.5)#時間の調整あり
                 self.sub_state = 0
@@ -144,13 +161,14 @@ class GoGetItNode:
     def finishState(self):
         self.commandAPI_pub.publish(False)
         print 'state is finish'
-        CMD = '/usr/bin/picospeaker %s' % 'I finished go get it'
+        CMD = '/usr/bin/picospeaker %s' % 'Finished go get it'
         subprocess.call(CMD.strip().split(" "))
         print "--finish--"
         exit()
 
     def follow(self,state):
         self.follow_state = state.data
+        print 'def follow',self.follow_state
 
     def training(self,state):
         self.training_state = state.data 
@@ -187,6 +205,5 @@ class GoGetItNode:
 if __name__ == '__main__':
     rospy.init_node('go_get_it_node')
     go_get_it = GoGetItNode()
-    rospy.sleep(1)
     go_get_it.loopMain()
     rospy.spin()

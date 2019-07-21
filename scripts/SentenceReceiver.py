@@ -54,6 +54,7 @@ class SetenceReceiver:
                     self.sentence = 'null'
                 elif self.sentence == 'stop':#followの終了かつsetupの終了
                     self.follow_state_pub.publish('stop')
+                    self.sentence = 'null'
                     
             while (self.t_state):#trainingface
                 print 'trainingface'
@@ -65,11 +66,13 @@ class SetenceReceiver:
                     self.training_state_pub.publish('finish')
                     if self.temporary_list != []:
                         self.temporary_list.insert(0,self.pose_x)#x座標を0列目
-                        self.temporary_list.insert(1,self.pose_y)#y座標を1行目
+                        self.temporary_list.insert(1,self.pose_y)#y座標を1列目
                         self.setup_list.append(self.temporary_list)#座標とオブジェクト情報を含んだlistをsetup_listに追加
                         self.temporary_list = []
+                        self.sentence = 'null'
                     elif self.temporary_list == []:#temporary_listの中身が空なら何も追加しない
                         print 'not add list'
+                        self.sentence = 'null'
                 
                 if self.sentence == 'change':
                     self.temporary_list= ['operator']#確認
@@ -77,9 +80,10 @@ class SetenceReceiver:
                     self.temporary_list.insert(1,self.pose_y)
                     self.setup_list.append(self.temporary_list) 
                     self.temporary_list = []
+                    self.sentence = 'null'
                     self.setup_result_pub.publish(True)
         
-                if self.sentence != 'null' and  self.sentence != 'stop' and self.sentence != 'follow' and self.sentence != 'start' and self.sentence != 'finish':#これらはコマンドなので配列に追加しないようにはじく
+                if self.sentence != 'null' and self.sentence != 'operator' and self.sentence != 'stop' and self.sentence != 'follow' and self.sentence != 'start' and self.sentence != 'finish':#これらはコマンドなので配列に追加しないようにはじく#operatorは決まっているので途中で追加しないようにはじく
                     split_sentence=self.sentence.split()
                     self.temporary_list.extend(split_sentence)#sentenceを一時的にtemporary_listに格納
                     print "temporary list:",self.temporary_list
@@ -100,6 +104,8 @@ class SetenceReceiver:
                                 self.pose_pub.publish(msg)#[x,y]の配列をnavigationにpublish
                                 self.object_pub.publish(self.setup_list[column][row])#把持するオブジェクトをマスタにpublish
                                 #print 'command is:',self.setup_list[column][row]
+                    self.sentence = 'null'
+
                 elif self.sentence == 'null':
                     print '           //waiting command//'
                     
