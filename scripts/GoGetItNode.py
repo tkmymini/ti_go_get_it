@@ -41,7 +41,6 @@ class GoGetItNode:
         self.setup_result = False
         self.navigation_result = 'Null'
         self.manipulation_result = False
-        self.arm_change_result = 'Null'
         #把持する物体名
         self.mani_obj = 'null'
         #成功した命令回数
@@ -133,7 +132,7 @@ class GoGetItNode:
                     self.changing_pose_req_pub.publish('carry')             
                     rospy.sleep(3)#かかる時間によって変更
                     self.sub_state = 4
-                    self.manipulation_result = 'Null'
+                    self.manipulation_result = False
             elif self.sub_state == 4:
                 self.return_pub.publish("operator")
                 self.sub_state = 5 
@@ -141,6 +140,7 @@ class GoGetItNode:
                 print 'state:return operator'
                 if self.navigation_result == 'succsess':
                     #self.m6_reqest_pub.publish(0.0)
+                    self.navigation_result = 'Null'
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'
@@ -157,8 +157,6 @@ class GoGetItNode:
                 subprocess.call(CMD.strip().split(" "))
                 rospy.sleep(1.5)#時間の調整あり
                 self.sub_state = 0
-                self.navigation_result = 'Null'
-                self.arm_change_result = 'Null'
                 self.succsess_count += 1
                 
     def finishState(self):
@@ -166,7 +164,7 @@ class GoGetItNode:
         print 'state is finish'
         CMD = '/usr/bin/picospeaker %s' % 'Finished go get it'
         subprocess.call(CMD.strip().split(" "))
-        print "--finish--"
+        print "--GGI finish--"
         exit()
 
     def follow(self,state):
@@ -207,5 +205,6 @@ class GoGetItNode:
 if __name__ == '__main__':
     rospy.init_node('go_get_it_node')
     go_get_it = GoGetItNode()
+    rospy.sleep(1)
     go_get_it.loopMain()
     rospy.spin()

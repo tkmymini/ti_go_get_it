@@ -36,8 +36,9 @@ class SetenceReceiver:
         self.sentence = sentence.data
         print "sentence:",sentence.data
 
-    def fAPI(self,f_state): #sentence:follow or stop
+    def fAPI(self,f_state): 
         self.f_state = f_state.data
+     
     def tAPI(self,t_state):
         self.t_state = t_state.data
     def cAPI(self,c_state):
