@@ -24,6 +24,7 @@ class SetenceReceiver:
 
         self.pose_x=999
         self.pose_y=999
+        self.pose_w=999
         self.sentence = "null"
         self.pose_flg = False
         self.f_state = False
@@ -68,6 +69,7 @@ class SetenceReceiver:
                     if self.temporary_list != []:
                         self.temporary_list.insert(0,self.pose_x)#x座標を0列目
                         self.temporary_list.insert(1,self.pose_y)#y座標を1列目
+                        self.temporary_list.insert(2,self.pose_w)#y座標を2列目
                         self.setup_list.append(self.temporary_list)#座標とオブジェクト情報を含んだlistをsetup_listに追加
                         self.temporary_list = []
                         self.sentence = 'null'
@@ -79,6 +81,7 @@ class SetenceReceiver:
                     self.temporary_list= ['operator']#確認
                     self.temporary_list.insert(0,self.pose_x)
                     self.temporary_list.insert(1,self.pose_y)
+                    self.temporary_list.insert(2,self.pose_w)
                     self.setup_list.append(self.temporary_list) 
                     self.temporary_list = []
                     self.sentence = 'null'
@@ -99,9 +102,11 @@ class SetenceReceiver:
                                 self.com_pub.publish(True)
                                 pose_x = self.setup_list[column][0]#x座標(命令の物体または目的地の)
                                 pose_y = self.setup_list[column][1]#y座標(命令の物体または目的地の)
+                                pose_w = self.setup_list[column][2]#w座標(命令の物体または目的地の)
                                 msg = Multi()
                                 msg.pose_x = pose_x
                                 msg.pose_y = pose_y
+                                msg.pose_w = pose_w
                                 self.pose_pub.publish(msg)#[x,y]の配列をnavigationにpublish
                                 self.object_pub.publish(self.setup_list[column][row])#把持するオブジェクトをマスタにpublish
                                 #print 'command is:',self.setup_list[column][row]
@@ -116,6 +121,7 @@ class SetenceReceiver:
                 if self.state == True and self.pose_flg == False:#memo_flg:場所の記憶を開始/append_flg:複数の目的地を記憶しないように
                     self.pose_x=pose.transforms[0].transform.translation.x
                     self.pose_y=pose.transforms[0].transform.translation.y
+                    self.pose_w=pose.transforms[0].transform.translation.w#このトピックは要変更/実機で確認
                     self.pose_flg = True
                     print "-- memorize place --"
         except AttributeError:

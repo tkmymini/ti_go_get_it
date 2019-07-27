@@ -29,14 +29,17 @@ class Navigation:
         self.cmd_vel = Twist()
         self.cmd_vel.angular.z = 0.0
         self.sub_state = 0
-        self.pose_x = 0
-        self.pose_y = 0
+        self.pose_x = 999
+        self.pose_y = 999
+        self.pose_w = 999
 
     def Navigate(self,destination):
         self.pose_x = destination.pose_x
         self.pose_y = destination.pose_y
+        self.pose_w = destination.pose_w
         print 'destination x:',self.pose_x
         print 'destination y:',self.pose_y
+        print 'destination w:',self.pose_w 
         ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         if ac.wait_for_server(rospy.Duration(5)) == 1:
             print "wait for action client rising up 0"
@@ -45,7 +48,7 @@ class Navigation:
         goal.target_pose.header.stamp = rospy.Time.now() # 現在時刻
         goal.target_pose.pose.position.x =  self.pose_x
         goal.target_pose.pose.position.y =  self.pose_y        
-        q = tf.transformations.quaternion_from_euler(0, 0, 0)
+        q = tf.transformations.quaternion_from_euler(0, 0, self.pose_w)
         goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
         ac.send_goal(goal);        
         while not rospy.is_shutdown():
@@ -79,7 +82,7 @@ class Navigation:
                 goal.target_pose.header.stamp = rospy.Time.now() # 現在時刻
                 goal.target_pose.pose.position.x =  self.pose_x
                 goal.target_pose.pose.position.y =  self.pose_y
-                q = tf.transformations.quaternion_from_euler(0, 0, 0)
+                q = tf.transformations.quaternion_from_euler(0, 0, self.pose_w)
                 goal.target_pose.pose.orientation = Quaternion(q[0],q[1],q[2],q[3])
                 ac.send_goal(goal);
         print "finish"
