@@ -13,7 +13,6 @@ class SetenceReceiver:
         self.commandAPT_sub = rospy.Subscriber('/commandface',Bool,self.cAPI)
         self.voice_sub = rospy.Subscriber("/sentence",String,self.voice)
         self.tf_sub = rospy.Subscriber("/tf",TFMessage,self.BaseCB)
-        self.navi_entrace_sub = rospy.Subscriber("/entrance",String,self.BaseCB)#玄関専用のnavigationのCB関数entranceが入ってきたら玄関へnavi
 
         self.follow_state_pub = rospy.Publisher('/follow/state',String,queue_size=10)
         self.training_state_pub = rospy.Publisher('/training/state',String,queue_size=10)
@@ -121,7 +120,7 @@ class SetenceReceiver:
                 if self.state == True and self.pose_flg == False:#memo_flg:場所の記憶を開始/append_flg:複数の目的地を記憶しないように
                     self.pose_x=pose.transforms[0].transform.translation.x
                     self.pose_y=pose.transforms[0].transform.translation.y
-                    self.pose_w=pose.transforms[0].transform.translation.w#このトピックは要変更/実機で確認
+                    self.pose_w=pose.transforms[0].transform.rotation.z
                     self.pose_flg = True
                     print "-- memorize place --"
         except AttributeError:
