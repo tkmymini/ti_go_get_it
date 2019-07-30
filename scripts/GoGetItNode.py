@@ -51,7 +51,7 @@ class GoGetItNode:
     def Setup(self):
         if self.setup_result == False:
             print "state is setup"
-            #self.m6_reqest_pub.publish(0.0)
+            self.m6_reqest_pub.publish(0.3)
             if self.sub_state == 0:
                 self.followAPI_pub.publish(True)
                 CMD = '/usr/bin/picospeaker %s' % 'Waiting'
@@ -112,7 +112,6 @@ class GoGetItNode:
             elif self.sub_state == 1:
                 print 'waiting command'
                 if self.receive_com == True:
-                    #self.m6_reqest_pub.publish(-0.8)
                     self.commandAPI_pub.publish(False)
                     CMD = '/usr/bin/picospeaker %s' % 'Ok'
                     subprocess.call(CMD.strip().split(" "))
@@ -123,12 +122,14 @@ class GoGetItNode:
                 print "state:Navigate"
                 if self.navigation_result == 'succsess':
                     self.sub_state = 3
+                    self.m6_reqest_pub.publish(-0.07)
                     self.mani_obj_req_pub.publish(self.mani_obj)
                     self.navigation_result = 'Null'
             elif self.sub_state == 3:
                 print "state:Manipulation"
                 if self.manipulation_result == True:
                     print 'state:arm change'
+                    self.m6_reqest_pub.publish(0.3)
                     self.changing_pose_req_pub.publish('carry')             
                     rospy.sleep(3)#かかる時間によって変更
                     self.sub_state = 4
@@ -139,25 +140,30 @@ class GoGetItNode:
             elif self.sub_state == 5:
                 print 'state:return operator'
                 if self.navigation_result == 'succsess':
-                    #self.m6_reqest_pub.publish(0.0)
+                    #self.m6_reqest_pub.publish(0.0)#人を見つける必要があれば角度変更して人を見つける
                     self.navigation_result = 'Null'
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'
-                self.changing_pose_req_pub.publish('pass')#人にオブジェクトを渡すためにアームの角度を変える必要があれば。
+                self.changing_pose_req_pub.publish('pass')#人に渡す。まだ物体は離さない
                 rospy.sleep(3)#かかる時間によって変更
                 self.sub_state = 7
             elif self.sub_state == 7:
                 CMD = '/usr/bin/picospeaker %s' % 'Here you are'
                 subprocess.call(CMD.strip().split(" "))
-                rospy.sleep(2)#時間の調整あり
+                rospy.sleep(1)#時間の調整あり
+                self.commandAPI_pub.publish(True)
                 self.sub_state = 8
             elif self.sub_state == 8:
-                CMD = '/usr/bin/picospeaker %s' % 'You are welcome'
-                subprocess.call(CMD.strip().split(" "))
-                rospy.sleep(1.5)#時間の調整あり
-                self.sub_state = 0
-                self.succsess_count += 1
+                if self.sentence == 'thank you':
+                    self.commandAPI_pub.publish(False)
+                    self.changing_pose_req_pub.publish('m5 open')#物体を離す。この状態では腕が伸びているのでどうするかは要検討
+                    rospy.sleep(3)#かかる時間によって変更
+                    CMD = '/usr/bin/picospeaker %s' % 'You are welcome'
+                    subprocess.call(CMD.strip().split(" "))
+                    rospy.sleep(1.5)#時間の調整あり
+                    self.sub_state = 0
+                    self.succsess_count += 1
                 
     def finishState(self):
         self.commandAPI_pub.publish(False)

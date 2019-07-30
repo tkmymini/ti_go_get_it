@@ -25,7 +25,7 @@ class SetenceReceiver:
         self.pose_y=999
         self.pose_w=999
         self.sentence = "null"
-        self.pose_flg = False
+        self.pose_flg = False#音声によって座標を受け取ったかどうか
         self.f_state = False
         self.t_state = False
         self.c_state = False
@@ -53,7 +53,7 @@ class SetenceReceiver:
                 if self.sentence == 'follow':#followの開始 
                     self.follow_state_pub.publish('start')
                     self.sentence = 'null'
-                elif self.sentence == 'stop':#followの終了かつsetupの終了
+                elif self.sentence == 'stop':#followの終了
                     self.follow_state_pub.publish('stop')
                     self.sentence = 'null'
                     
@@ -76,8 +76,8 @@ class SetenceReceiver:
                         print 'not add list'
                         self.sentence = 'null'
                 
-                if self.sentence == 'change':
-                    self.temporary_list= ['operator']#確認
+                if self.sentence == 'change':#faceの切り替わり[setup→ command]オペの場所で終わるとしてその座標を記憶する
+                    self.temporary_list= ['operator']
                     self.temporary_list.insert(0,self.pose_x)
                     self.temporary_list.insert(1,self.pose_y)
                     self.temporary_list.insert(2,self.pose_w)
@@ -106,7 +106,7 @@ class SetenceReceiver:
                                 msg.pose_x = pose_x
                                 msg.pose_y = pose_y
                                 msg.pose_w = pose_w
-                                self.pose_pub.publish(msg)#[x,y]の配列をnavigationにpublish
+                                self.pose_pub.publish(msg)#[x,y,w]の配列をnavigationにpublish
                                 self.object_pub.publish(self.setup_list[column][row])#把持するオブジェクトをマスタにpublish
                                 #print 'command is:',self.setup_list[column][row]
                     self.sentence = 'null'
