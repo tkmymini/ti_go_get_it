@@ -2,6 +2,7 @@
 $ roscore  
 $ roslaunch turtlebot_bringup minimal.launch  
 $ roslaunch turtlebot_bringup 3dsensor.launch  
+$ roslaunch realsense2_camera rs_rgbd.launch  
 $ roslaunch turtlebot_rviz_launchers view_navigation.launch  
 $ roslaunch e_manipulation motor_setup.launch  
 $ roslaunch camera_tf start_camera_tf.launch  
