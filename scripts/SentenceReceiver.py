@@ -18,7 +18,7 @@ class SetenceReceiver:
         self.training_state_pub = rospy.Publisher('/training/state',String,queue_size=10)
         self.setup_result_pub  = rospy.Publisher('/setup/result',Bool,queue_size=10)
         self.com_pub  = rospy.Publisher('/command',Bool,queue_size=10)
-        self.pose_pub  = rospy.Publisher('/pose',Multi,queue_size=10)
+        self.pose_pub  = rospy.Publisher('/pose',Multi,queue_size=1)
         self.object_pub = rospy.Publisher('/object/manipulation',String,queue_size=10)
 
         self.pose_x=999
@@ -43,6 +43,9 @@ class SetenceReceiver:
         self.t_state = t_state.data
     def cAPI(self,c_state):
         self.c_state = c_state.data
+        print 'state :',self.c_state 
+        rospy.sleep(1)
+        
 
     def API(self):
         while not rospy.is_shutdown():
@@ -63,7 +66,6 @@ class SetenceReceiver:
                 print self.setup_list
                 print ''
                 if self.sentence == 'finish':#記憶の終了
-                    self.pose_flg = False#実機でやってみないとわからん← 座標を記憶するタイミング
                     self.training_state_pub.publish('finish')
                     if self.temporary_list != []:
                         self.temporary_list.insert(0,self.pose_x)#x座標を0列目
@@ -89,6 +91,7 @@ class SetenceReceiver:
                 if self.sentence != 'null' and self.sentence != 'operator' and self.sentence != 'stop' and self.sentence != 'follow' and self.sentence != 'start' and self.sentence != 'finish':#これらはコマンドなので配列に追加しないようにはじく#operatorは決まっているので途中で追加しないようにはじく
                     split_sentence=self.sentence.split()
                     self.temporary_list.extend(split_sentence)#sentenceを一時的にtemporary_listに格納
+                    self.pose_flg = False#実機でやってみないとわからん← 座標を記憶するタイミング
                     print "temporary list:",self.temporary_list
                     self.sentence = 'null'
                                                     
@@ -96,7 +99,7 @@ class SetenceReceiver:
                 print 'command fase'
                 if self.sentence != 'null':
                     for column in range(0,len(self.setup_list)):
-                        for row in range(2,len(self.setup_list[column])):
+                        for row in range(3,len(self.setup_list[column])):
                             if self.setup_list[column][row] in self.sentence:
                                 self.com_pub.publish(True)
                                 pose_x = self.setup_list[column][0]#x座標(命令の物体または目的地の)
@@ -117,7 +120,7 @@ class SetenceReceiver:
     def BaseCB(self,pose):
         try:
             if pose.transforms[0].header.frame_id == 'odom':
-                if self.state == True and self.pose_flg == False:#memo_flg:場所の記憶を開始/append_flg:複数の目的地を記憶しないように
+                if self.t_state == True and self.pose_flg == False:#memo_flg:場所の記憶を開始/append_flg:複数の目的地を記憶しないように
                     self.pose_x=pose.transforms[0].transform.translation.x
                     self.pose_y=pose.transforms[0].transform.translation.y
                     self.pose_w=pose.transforms[0].transform.rotation.z

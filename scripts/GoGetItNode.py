@@ -17,7 +17,7 @@ class GoGetItNode:
         self.mani_obj = rospy.Subscriber('/object/manipulation',String,self.manipulationObj)
 
         self.m6_reqest_pub = rospy.Publisher('/m6_controller/command',Float64,queue_size=1)
-        self.follow_request_pub = rospy.Publisher('follow_human',String,queue_size=10)#followの開始・終了
+        self.follow_request_pub = rospy.Publisher('/chase/request',String,queue_size=10)#followの開始・終了
         self.return_pub = rospy.Publisher('/return/operator',String,queue_size=10)#voicereceiver.pyに送る
         self.mani_obj_req_pub = rospy.Publisher('/object/grasp_req',String,queue_size=10)
         self.followAPI_pub = rospy.Publisher('/followface',Bool,queue_size=10)
@@ -46,6 +46,7 @@ class GoGetItNode:
         #成功した命令回数
         self.succsess_count = 0
 
+        self.sentence = 'none'
         self.order_list = ['setup','command']
         
     def Setup(self):
