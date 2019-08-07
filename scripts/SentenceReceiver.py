@@ -5,6 +5,7 @@ import rospy
 from std_msgs.msg import String,Bool
 from ti_go_get_it.msg import Multi
 from tf2_msgs.msg import TFMessage
+from nav_msgs.msg import Odometry
 
 class SetenceReceiver:
     def __init__(self):
@@ -12,7 +13,8 @@ class SetenceReceiver:
         self.trainingAPT_sub = rospy.Subscriber('/trainingface',Bool,self.tAPI)
         self.commandAPT_sub = rospy.Subscriber('/commandface',Bool,self.cAPI)
         self.voice_sub = rospy.Subscriber("/sentence",String,self.voice)
-        self.tf_sub = rospy.Subscriber("/tf",TFMessage,self.BaseCB)
+        #self.tf_sub = rospy.Subscriber("/tf",TFMessage,self.BaseCB)
+        self.tf_sub = rospy.Subscriber("/odom",Odometry,self.BaseCB)
 
         self.follow_state_pub = rospy.Publisher('/follow/state',String,queue_size=10)
         self.training_state_pub = rospy.Publisher('/training/state',String,queue_size=10)
@@ -25,7 +27,7 @@ class SetenceReceiver:
         self.pose_y=999
         self.pose_w=999
         self.sentence = "null"
-        self.pose_flg = False#音声によって座標を受け取ったかどうか
+        self.pose_flg = False
         self.f_state = False
         self.t_state = False
         self.c_state = False
@@ -59,7 +61,8 @@ class SetenceReceiver:
                 elif self.sentence == 'stop':#followの終了
                     self.follow_state_pub.publish('stop')
                     self.sentence = 'null'
-                    
+                    self.pose_flg = True
+                                 
             while (self.t_state):#trainingface
                 print 'trainingface'
                 print 'setup list:'
@@ -91,7 +94,7 @@ class SetenceReceiver:
                 if self.sentence != 'null' and self.sentence != 'operator' and self.sentence != 'stop' and self.sentence != 'follow' and self.sentence != 'start' and self.sentence != 'finish':#これらはコマンドなので配列に追加しないようにはじく#operatorは決まっているので途中で追加しないようにはじく
                     split_sentence=self.sentence.split()
                     self.temporary_list.extend(split_sentence)#sentenceを一時的にtemporary_listに格納
-                    self.pose_flg = False#実機でやってみないとわからん← 座標を記憶するタイミング
+                    #self.pose_flg = False
                     print "temporary list:",self.temporary_list
                     self.sentence = 'null'
                                                     
@@ -119,13 +122,15 @@ class SetenceReceiver:
                     
     def BaseCB(self,pose):
         try:
-            if pose.transforms[0].header.frame_id == 'odom':
-                if self.t_state == True and self.pose_flg == False:#memo_flg:場所の記憶を開始/append_flg:複数の目的地を記憶しないように
-                    self.pose_x=pose.transforms[0].transform.translation.x
-                    self.pose_y=pose.transforms[0].transform.translation.y
-                    self.pose_w=pose.transforms[0].transform.rotation.z
-                    self.pose_flg = True
-                    print "-- memorize place --"
+            print 'x:',pose.pose.pose.position.x
+            print 'y:',pose.pose.pose.position.y
+            print 'w:',pose.pose.pose.orientation.w
+            if self.pose_flg == True:
+                self.pose_x=pose.pose.pose.position.x
+                self.pose_y=pose.pose.pose.position.y
+                self.pose_w=pose.pose.pose.orientation.w
+                self.pose_flg = False
+                print "-- memorize place --"
         except AttributeError:
             print 'error'
             pass

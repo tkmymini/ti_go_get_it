@@ -16,6 +16,7 @@ class GoGetItNode:
         self.com_sub = rospy.Subscriber('/command',Bool,self.receiveCommand)
         self.mani_obj = rospy.Subscriber('/object/manipulation',String,self.manipulationObj)
 
+        self.m4_reqest_pub = rospy.Publisher('/m4_controller/command',Float64,queue_size=1)
         self.m6_reqest_pub = rospy.Publisher('/m6_controller/command',Float64,queue_size=1)
         self.follow_request_pub = rospy.Publisher('/chase/request',String,queue_size=10)#followの開始・終了
         self.return_pub = rospy.Publisher('/return/operator',String,queue_size=10)#voicereceiver.pyに送る
@@ -95,7 +96,7 @@ class GoGetItNode:
                     rospy.sleep(0.5)
                     self.training_state = 'null'
                     self.sub_state=0
-                    rospy.sleep(3)
+                    #rospy.sleep(3)
         elif self.setup_result == True:
             self.trainingAPI_pub.publish(False)
             self.main_state = self.order_list[1]
@@ -146,7 +147,14 @@ class GoGetItNode:
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'
-                self.changing_pose_req_pub.publish('pass')#人に渡す。まだ物体は離さない
+                #----test----
+                self.m4_reqest_pub.publish(0.1)
+                self.sub_state = 0
+                self.succsess_count += 1
+                
+
+                #本来行うはずの処理#送る文字列はmani.pyの文字列に合わせてください
+                """self.changing_pose_req_pub.publish('pass')#人に渡す。まだ物体は離さない
                 rospy.sleep(3)#かかる時間によって変更
                 self.sub_state = 7
             elif self.sub_state == 7:
@@ -158,13 +166,13 @@ class GoGetItNode:
             elif self.sub_state == 8:
                 if self.sentence == 'thank you':
                     self.commandAPI_pub.publish(False)
-                    self.changing_pose_req_pub.publish('m5 open')#物体を離す。この状態では腕が伸びているのでどうするかは要検討
+                    self.changing_pose_req_pub.publish('m4 open')#物体を離す。この状態では腕が伸びているのでどうするかは要検討
                     rospy.sleep(3)#かかる時間によって変更
                     CMD = '/usr/bin/picospeaker %s' % 'You are welcome'
                     subprocess.call(CMD.strip().split(" "))
                     rospy.sleep(1.5)#時間の調整あり
                     self.sub_state = 0
-                    self.succsess_count += 1
+                    self.succsess_count += 1"""
                 
     def finishState(self):
         self.commandAPI_pub.publish(False)
@@ -201,7 +209,7 @@ class GoGetItNode:
         while not rospy.is_shutdown():
             print 'succsess count is:',self.succsess_count
             print ''
-            if self.succsess_count == 5:#succsess_count == 繰り返したい回数
+            if self.succsess_count == 2:#succsess_count == 繰り返したい回数
                 self.finishState()
             if self.main_state == self.setup:
                 self.Setup()
