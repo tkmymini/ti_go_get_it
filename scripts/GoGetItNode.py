@@ -140,7 +140,7 @@ class GoGetItNode:
                 print 'state:return operator'
                 if self.navigation_result == 'succsess':
                     self.returnAPI_pub.publish(False)
-                    self.navigation_result = 'Null'#うまくはいってないかも。次のゴールがやたら早い
+                    self.navigation_result = 'Null'
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'
@@ -148,11 +148,12 @@ class GoGetItNode:
                 rospy.sleep(3)#かかる時間によって変更
                 self.sub_state = 7
             elif self.sub_state == 7:
-                self.tts_pub.publish('Pull it up')
+                self.tts_pub.publish('Please pull it up')
                 rospy.sleep(2)#時間の調整あり
                 self.sub_state = 8
             elif self.sub_state == 8:
                 if self.arm_change_result == True:
+                    rospy.sleep(2)
                     self.arm_change_result = False
                     self.sub_state = 0
                     self.succsess_count += 1
