@@ -1,12 +1,7 @@
 ## GoGetIt setup
-$ roscore  
-$ roslaunch turtlebot_bringup minimal.launch  
-$ roslaunch turtlebot_bringup 3dsensor.launch  
-$ roslaunch realsense2_camera rs_rgbd.launch   
+$ sh mimi_setup.sh  
 $ roslaunch e_manipulation motor_setup.launch  
-$ roslaunch camera_tf start_camera_tf.launch  
-$ roslaunch turtlebot_navigation gmapping_demo.launch  
-$ roslaunch turtlebot_rviz_launchers view_navigation.launch  
+$ rosrun ti_go_get_it ggi_follownavi.sh  
 $ rosrun chaser chaser  
 $ rosrun e_object_recognizer object_recognizer.py  
 $ rosrun e_grasping_position_detector e_grasping_position_detector  
