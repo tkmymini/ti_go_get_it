@@ -7,7 +7,6 @@ import rospy
 import tf
 import math
 import actionlib
-import subprocess
 import std_srvs.srv
 from ti_go_get_it.msg import Multi
 from tf2_msgs.msg import TFMessage
@@ -50,6 +49,7 @@ class Navigation:
         self.pose_w = destination.pose_w
         print 'destination x:',self.pose_x
         print 'destination y:',self.pose_y
+        print 'destination z:',self.pose_z
         print 'destination w:',self.pose_w
         
         goal = PoseStamped()

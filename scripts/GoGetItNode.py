@@ -3,7 +3,6 @@
 
 import rospy
 from geometry_msgs.msg import Twist
-import subprocess
 from std_msgs.msg import String,Bool,Float64
 
 class GoGetItNode:
@@ -15,18 +14,19 @@ class GoGetItNode:
         self.mani_result_sub = rospy.Subscriber('/object/grasp_res',Bool,self.manipulateResult)
         self.com_sub = rospy.Subscriber('/command',Bool,self.receiveCommand)
         self.mani_obj = rospy.Subscriber('/object/manipulation',String,self.manipulationObj)
+        self.change_pose_res_sub = rospy.Subscriber('/arm/changing_pose_res',Bool,self.changePoseResult)
 
         self.m4_reqest_pub = rospy.Publisher('/m4_controller/command',Float64,queue_size=1)
         self.m6_reqest_pub = rospy.Publisher('/m6_controller/command',Float64,queue_size=1)
-        self.follow_request_pub = rospy.Publisher('/chase/request',String,queue_size=10)#followの開始・終了
-        self.return_pub = rospy.Publisher('/sentence',String,queue_size=10)#SentenceReceiver.pyに送る
-        
-        self.mani_obj_req_pub = rospy.Publisher('/object/grasp_req',String,queue_size=10)
-        self.followAPI_pub = rospy.Publisher('/followface',Bool,queue_size=10)
-        self.trainingAPI_pub = rospy.Publisher('/trainingface',Bool,queue_size=10)
-        self.commandAPI_pub = rospy.Publisher('/commandface',Bool,queue_size=10)
-        self.returnAPI_pub = rospy.Publisher('/returnface',Bool,queue_size=10)
+        self.follow_request_pub = rospy.Publisher('/chase/request',String,queue_size=1)#followの開始・終了
+        self.return_pub = rospy.Publisher('/sentence',String,queue_size=1)#SentenceReceiver.pyに送る
+        self.mani_obj_req_pub = rospy.Publisher('/object/grasp_req',String,queue_size=1)
+        self.followAPI_pub = rospy.Publisher('/followface',Bool,queue_size=1)
+        self.trainingAPI_pub = rospy.Publisher('/trainingface',Bool,queue_size=1)
+        self.commandAPI_pub = rospy.Publisher('/commandface',Bool,queue_size=1)
+        self.returnAPI_pub = rospy.Publisher('/returnface',Bool,queue_size=1)
         self.changing_pose_req_pub = rospy.Publisher('/arm/changing_pose_req',String,queue_size=1)
+        self.tts_pub = rospy.Publisher('/tts',String,queue_size = 1)
 
         #状態遷移するための変数
         self.main_state = 999
@@ -44,6 +44,7 @@ class GoGetItNode:
         self.setup_result = False
         self.navigation_result = 'Null'
         self.manipulation_result = False
+        self.arm_change_result = False
         #把持する物体名
         self.mani_obj = 'null'
         #成功した命令回数
@@ -58,8 +59,7 @@ class GoGetItNode:
             self.m6_reqest_pub.publish(0.3)
             if self.sub_state == 0:
                 self.followAPI_pub.publish(True)
-                CMD = '/usr/bin/picospeaker %s' % 'Waiting'
-                subprocess.call(CMD.strip().split(" "))
+                self.tts_pub.publish('Waiting')
                 rospy.sleep(0.5)
                 self.sub_state=1
             elif self.sub_state == 1:
@@ -68,15 +68,13 @@ class GoGetItNode:
                     print 'wait'
                 if self.follow_state == 'start':
                     self.follow_request_pub.publish('start')#followの開始
-                    CMD = '/usr/bin/picospeaker %s' % 'Ok'
-                    subprocess.call(CMD.strip().split(" "))
+                    self.tts_pub.publish('Ok')
                     rospy.sleep(0.5)
                     self.follow_state = 'now'
                 elif self.follow_state == 'now':
                     print 'now'
                 elif self.follow_state == 'stop':
-                    CMD = '/usr/bin/picospeaker %s' % 'Ok'
-                    subprocess.call(CMD.strip().split(" "))
+                    self.tts_pub.publish('Ok')
                     rospy.sleep(0.5)
                     self.follow_request_pub.publish('stop')#followの終了#followの終了にラグがありすぎる場合はこの場所をsentecereceiveに書く
                     self.followAPI_pub.publish(False)
@@ -85,20 +83,17 @@ class GoGetItNode:
                     self.sub_state=2
             elif self.sub_state == 2:
                 self.trainingAPI_pub.publish(True)
-                CMD = '/usr/bin/picospeaker %s' % 'Memorize start'
-                subprocess.call(CMD.strip().split(" "))
+                self.tts_pub.publish('Memorize start')
                 rospy.sleep(1)
                 self.sub_state=3
             elif self.sub_state == 3:
                 print 'trainingface'
                 if self.training_state == 'finish':
                     self.trainingAPI_pub.publish(False)
-                    CMD = '/usr/bin/picospeaker %s' % 'Memorize fenish'
-                    subprocess.call(CMD.strip().split(" "))
+                    self.tts_pub.publish('Memorize fenish')
                     rospy.sleep(0.5)
                     self.training_state = 'null'
                     self.sub_state=0
-                    #rospy.sleep(3)
         elif self.setup_result == True:
             self.trainingAPI_pub.publish(False)
             self.main_state = self.order_list[1]
@@ -110,15 +105,13 @@ class GoGetItNode:
             if self.sub_state == 0:
                 self.commandAPI_pub.publish(True)
                 rospy.sleep(0.5)
-                CMD = '/usr/bin/picospeaker %s' % 'Order please'
-                subprocess.call(CMD.strip().split(" "))
+                self.tts_pub.publish('Order please')
                 self.sub_state = 1
             elif self.sub_state == 1:
                 print 'waiting command'
                 if self.receive_com == True:
                     self.commandAPI_pub.publish(False)
-                    CMD = '/usr/bin/picospeaker %s' % 'Ok'
-                    subprocess.call(CMD.strip().split(" "))
+                    self.tts_pub.publish('Ok')
                     rospy.sleep(0.5)
                     self.receive_com = False
                     self.sub_state = 2
@@ -147,43 +140,28 @@ class GoGetItNode:
                 print 'state:return operator'
                 if self.navigation_result == 'succsess':
                     self.returnAPI_pub.publish(False)
-                    #self.m6_reqest_pub.publish(0.0)#人を見つける必要があれば角度変更して人を見つける
                     self.navigation_result = 'Null'#うまくはいってないかも。次のゴールがやたら早い
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'
-                #----test----
-                self.m4_reqest_pub.publish(0.1)
-                self.sub_state = 0
-                self.succsess_count += 1
-                
-
-                #本来行うはずの処理#送る文字列はmani.pyの文字列に合わせてください
-                """self.changing_pose_req_pub.publish('pass')#人に渡す。まだ物体は離さない
+                self.changing_pose_req_pub.publish('give')
                 rospy.sleep(3)#かかる時間によって変更
                 self.sub_state = 7
             elif self.sub_state == 7:
-                CMD = '/usr/bin/picospeaker %s' % 'Here you are'
-                subprocess.call(CMD.strip().split(" "))
-                rospy.sleep(1)#時間の調整あり
-                self.commandAPI_pub.publish(True)
+                self.tts_pub.publish('Pull it up')
+                rospy.sleep(2)#時間の調整あり
                 self.sub_state = 8
             elif self.sub_state == 8:
-                if self.sentence == 'thank you':
-                    self.commandAPI_pub.publish(False)
-                    self.changing_pose_req_pub.publish('m4 open')#物体を離す。この状態では腕が伸びているのでどうするかは要検討
-                    rospy.sleep(3)#かかる時間によって変更
-                    CMD = '/usr/bin/picospeaker %s' % 'You are welcome'
-                    subprocess.call(CMD.strip().split(" "))
-                    rospy.sleep(1.5)#時間の調整あり
+                if self.arm_change_result == True:
+                    self.arm_change_result = False
                     self.sub_state = 0
-                    self.succsess_count += 1"""
+                    self.succsess_count += 1
+                
                 
     def finishState(self):
         self.commandAPI_pub.publish(False)
         print 'state is finish'
-        CMD = '/usr/bin/picospeaker %s' % 'Finished go get it'
-        subprocess.call(CMD.strip().split(" "))
+        self.tts_pub.publish('Finished go get it')
         print "--GGI finish--"
         exit()
 
@@ -207,6 +185,9 @@ class GoGetItNode:
         
     def manipulateResult(self,result):
         self.manipulation_result = result.data
+
+    def changePoseResult(self,result):
+        self.arm_change_result = result.data
 
     def loopMain(self):
         print 'start [go get it]'
