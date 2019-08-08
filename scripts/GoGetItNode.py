@@ -19,11 +19,13 @@ class GoGetItNode:
         self.m4_reqest_pub = rospy.Publisher('/m4_controller/command',Float64,queue_size=1)
         self.m6_reqest_pub = rospy.Publisher('/m6_controller/command',Float64,queue_size=1)
         self.follow_request_pub = rospy.Publisher('/chase/request',String,queue_size=10)#followの開始・終了
-        self.return_pub = rospy.Publisher('/return/operator',String,queue_size=10)#voicereceiver.pyに送る
+        self.return_pub = rospy.Publisher('/sentence',String,queue_size=10)#SentenceReceiver.pyに送る
+        
         self.mani_obj_req_pub = rospy.Publisher('/object/grasp_req',String,queue_size=10)
         self.followAPI_pub = rospy.Publisher('/followface',Bool,queue_size=10)
         self.trainingAPI_pub = rospy.Publisher('/trainingface',Bool,queue_size=10)
         self.commandAPI_pub = rospy.Publisher('/commandface',Bool,queue_size=10)
+        self.returnAPI_pub = rospy.Publisher('/returnface',Bool,queue_size=10)
         self.changing_pose_req_pub = rospy.Publisher('/arm/changing_pose_req',String,queue_size=1)
 
         #状態遷移するための変数
@@ -137,13 +139,16 @@ class GoGetItNode:
                     self.sub_state = 4
                     self.manipulation_result = False
             elif self.sub_state == 4:
+                self.returnAPI_pub.publish(True)
+                rospy.sleep(1)
                 self.return_pub.publish("operator")
                 self.sub_state = 5 
             elif self.sub_state == 5:
                 print 'state:return operator'
                 if self.navigation_result == 'succsess':
+                    self.returnAPI_pub.publish(False)
                     #self.m6_reqest_pub.publish(0.0)#人を見つける必要があれば角度変更して人を見つける
-                    self.navigation_result = 'Null'
+                    self.navigation_result = 'Null'#うまくはいってないかも。次のゴールがやたら早い
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'

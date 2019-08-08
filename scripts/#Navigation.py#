@@ -50,6 +50,7 @@ class Navigation:
         self.pose_w = destination.pose_w
         print 'destination x:',self.pose_x
         print 'destination y:',self.pose_y
+        print 'destination z:',self.pose_z
         print 'destination w:',self.pose_w
         
         goal = PoseStamped()
