@@ -10,7 +10,7 @@ class GoGetItNode:
         self.follow_state_sub = rospy.Subscriber('/follow/state',String,self.follow)#follow_stateの変更
         self.training_state_sub = rospy.Subscriber('/training/state',String,self.training)#training_stateの変更
         self.setup_result_sub = rospy.Subscriber('/setup/result',Bool,self.setupResult)
-        self.navi_result_sub = rospy.Subscriber('navigation/result',String,self.navigateResult)
+        self.navi_result_sub = rospy.Subscriber('navigation/result',Bool,self.navigateResult)
         self.mani_result_sub = rospy.Subscriber('/object/grasp_res',Bool,self.manipulateResult)
         self.com_sub = rospy.Subscriber('/command',Bool,self.receiveCommand)
         self.mani_obj = rospy.Subscriber('/object/manipulation',String,self.manipulationObj)
@@ -42,7 +42,7 @@ class GoGetItNode:
         self.training_state = 'null'
         #各result
         self.setup_result = False
-        self.navigation_result = 'Null'
+        self.navigation_result = False
         self.manipulation_result = False
         self.arm_change_result = False
         #把持する物体名
@@ -117,18 +117,18 @@ class GoGetItNode:
                     self.sub_state = 2
             elif self.sub_state == 2:
                 print "state:Navigate"
-                if self.navigation_result == 'succsess':
+                if self.navigation_result == True:
                     self.sub_state = 3
                     self.m6_reqest_pub.publish(-0.07)
                     self.mani_obj_req_pub.publish(self.mani_obj)
-                    self.navigation_result = 'Null'
+                    self.navigation_result = False
             elif self.sub_state == 3:
                 print "state:Manipulation"
                 if self.manipulation_result == True:
                     print 'state:arm change'
                     self.m6_reqest_pub.publish(0.3)
                     self.changing_pose_req_pub.publish('carry')             
-                    rospy.sleep(3)#かかる時間によって変更
+                    rospy.sleep(2)#かかる時間によって変更
                     self.sub_state = 4
                     self.manipulation_result = False
             elif self.sub_state == 4:
@@ -138,9 +138,9 @@ class GoGetItNode:
                 self.sub_state = 5 
             elif self.sub_state == 5:
                 print 'state:return operator'
-                if self.navigation_result == 'succsess':
+                if self.navigation_result == True:
                     self.returnAPI_pub.publish(False)
-                    self.navigation_result = 'Null'
+                    self.navigation_result = False
                     self.sub_state = 6
             elif self.sub_state == 6:
                 print 'state:arm change'
@@ -177,6 +177,7 @@ class GoGetItNode:
 
     def navigateResult(self,result):
         self.navigation_result = result.data
+        print "navi result:",self.navigation_result
         
     def receiveCommand(self,flg):
         self.receive_com = flg.data

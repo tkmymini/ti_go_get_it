@@ -19,9 +19,8 @@ from geometry_msgs.msg import Twist,Quaternion,PoseWithCovarianceStamped,PoseSta
 class Navigation:
     def __init__(self):
         self.destination_sub = rospy.Subscriber('/pose',Multi,self.Navigate)
-        self.navi_status_sub = rospy.Subscriber('move_base/status',GoalStatusArray,self.NaviStatusCB)
-    
-        self.result_pub = rospy.Publisher('navigation/result',String,queue_size=1)
+
+        self.navi_result_pub = rospy.Publisher('navigation/result',Bool,queue_size=1)
         self.vel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop',Twist,queue_size=1)
         self.clear_costmap = rospy.ServiceProxy('move_base/clear_costmaps',std_srvs.srv.Empty)
         self.navi_pub = rospy.Publisher('/move_base_simple/goal',PoseStamped,queue_size = 1)
@@ -35,13 +34,7 @@ class Navigation:
         self.pose_w = 999
         self.navi_status = 99
 
-    def NaviStatusCB(self,receive_msg):
-        try:
-            self.navi_status = receive_msg.status_list[0].status
-        except IndexError:
-            print 'error'
-            pass
-
+ 
     def Navigate(self,destination):
         self.pose_x = destination.pose_x
         self.pose_y = destination.pose_y
@@ -50,41 +43,42 @@ class Navigation:
         print 'destination x:',self.pose_x
         print 'destination y:',self.pose_y
         print 'destination z:',self.pose_z
-        print 'destination w:',self.pose_w
-        
-        goal = PoseStamped()
-        goal.header.frame_id = 'map'          # 地図座標系
-        goal.header.stamp = rospy.Time.now() # 現在時刻
-        goal.pose.position.x =  self.pose_x
-        goal.pose.position.y =  self.pose_y  
-        goal.pose.orientation.z = self.pose_z      
-        goal.pose.orientation.w = self.pose_w
-        self.navi_pub.publish(goal)
-               
+        print 'destination w:',self.pose_w                      
+ 
+        ac = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+        if ac.wait_for_server(rospy.Duration(5)) == 1:
+            print "wait for action client rising up 0"
+        print 'server coms up'
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = 'map'          # 地図座標系
+        goal.target_pose.header.stamp = rospy.Time.now() # 現在時刻
+        goal.target_pose.pose.position.x =  self.pose_x
+        goal.target_pose.pose.position.y =  self.pose_y
+        goal.target_pose.pose.orientation.z = self.pose_z
+        goal.target_pose.pose.orientation.z = self.pose_w
+        ac.send_goal(goal);
+            
         while not rospy.is_shutdown():
-            if self.navi_status == 1:                
+            if ac.get_state() == 1:
                 print 'Got out of the obstacle'
-            elif self.navi_status == 3:
+            elif ac.get_state() == 3:
                 print "goal"
-                print "w:",self.pose_w
-                rospy.sleep(10)
-                result = String()
-                result = "succsess"
-                self.result_pub.publish(result)
-                self.navi_status = 0
+                result = Bool()
+                result = True
+                self.navi_result_pub.publish(result)
                 break
-            elif self.navi_status == 4:
+            elif ac.get_state() == 4:
                 print 'Buried in obstacles'
                 self.clear_costmap()
-                goal = PoseStamped()
-                goal.header.frame_id = 'map'          # 地図座標系
-                goal.header.stamp = rospy.Time.now() # 現在時刻
-                goal.pose.position.x =  self.pose_x
-                goal.pose.position.y =  self.pose_y
-                goal.pose.orientation.z = self.pose_z
-                goal.pose.orientation.w = self.pose_w
-                self.navi_pub.publish(goal)
-        print "navi finish"
+                goal = MoveBaseGoal()
+                goal.target_pose.header.frame_id = 'map'          # 地図座標系
+                goal.target_pose.header.stamp = rospy.Time.now() # 現在時刻
+                goal.target_pose.pose.position.x =  self.pose_x
+                goal.target_pose.pose.position.y =  self.pose_y
+                goal.target_pose.pose.orientation.z = self.pose_z
+                goal.target_pose.pose.orientation.z = self.pose_w
+                ac.send_goal(goal);
+        print "navigation finished"
         
 if __name__ == '__main__':
     rospy.init_node('ggi_navigation',anonymous=True)
